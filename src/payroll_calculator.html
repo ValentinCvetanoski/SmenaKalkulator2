@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пресметка на плата / Shift Pay Calculator</title>
+<style>
+  :root{
+    --bg: #14161c;
+    --panel: #1b1e26;
+    --panel-2: #21242e;
+    --line: #2c2f3a;
+    --amber: #e2a53d;
+    --amber-dim: #7a5c26;
+    --text: #e9e6df;
+    --text-dim: #8b8f9c;
+    --green: #6fae7f;
+    --red: #c2685f;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --sans: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0;
+    background: linear-gradient(180deg, var(--bg), #0f1116);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 32px 20px 80px;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; }
+  .masthead{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom: 2px solid var(--amber-dim);
+    padding-bottom: 14px; margin-bottom: 28px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .masthead h1{
+    font-size: 22px; letter-spacing: 0.02em; margin:0; font-weight: 700;
+  }
+  .masthead .stamp{
+    font-family: var(--mono); font-size: 11px; color: var(--amber);
+    border: 1px solid var(--amber-dim); padding: 4px 10px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 20px 22px;
+    margin-bottom: 22px;
+  }
+  .panel h2{
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--amber); margin: 0 0 16px; font-weight: 600;
+  }
+  .grid{
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 14px 20px;
+  }
+  label{
+    display:block; font-size: 11px; color: var(--text-dim);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  input[type=number], select, input[type=text]{
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--text); font-family: var(--mono); font-size: 13px;
+    padding: 7px 8px; border-radius: 4px; outline: none;
+  }
+  input[type=number]:focus, select:focus{ border-color: var(--amber); }
+  details summary{
+    cursor: pointer; font-size: 11px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+  }
+  table{ width:100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+  thead th{
+    text-align:center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-dim); border-bottom: 1px solid var(--line); padding: 6px 4px; font-weight:600;
+  }
+  tbody td{
+    text-align:center; padding: 4px; border-bottom: 1px solid #22242c;
+  }
+  tbody tr:hover{ background: #1f222b; }
+  tr.sunday td{ background: rgba(226,165,61,0.05); }
+  tr.holiday td{ background: rgba(194,104,95,0.08); }
+  tr.free td{ color: var(--text-dim); }
+  select.shift{
+    padding: 3px 2px; font-size: 12px; width: 52px;
+  }
+  input.holiday-box{ width: 16px; height:16px; accent-color: var(--red); }
+  .paycell{ color: var(--green); font-weight: 600; }
+  .badge{
+    display:inline-block; font-size: 9px; padding: 1px 6px; border-radius: 8px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .badge.sun{ background: rgba(226,165,61,0.15); color: var(--amber); }
+  .badge.hol{ background: rgba(194,104,95,0.2); color: var(--red); }
+  .summary-grid{
+    display:grid; grid-template-columns: 1fr auto; gap: 10px 18px; font-family: var(--mono); font-size: 13.5px;
+  }
+  .summary-grid .lbl{ color: var(--text-dim); }
+  .summary-grid .val{ text-align:right; }
+  .divider{ border-top: 1px dashed var(--line); margin: 6px 0; grid-column: 1 / -1; }
+  .grand{
+    font-size: 19px; font-weight: 700; color: var(--amber);
+    display:flex; justify-content: space-between; align-items:baseline;
+    border-top: 2px solid var(--amber-dim); margin-top: 10px; padding-top: 14px;
+  }
+  .note{ font-size: 11px; color: var(--text-dim); line-height: 1.6; margin-top: 14px; }
+  .legend-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  footer{ text-align:center; font-size: 11px; color: var(--text-dim); margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>⏱ Пресметка на плата — Shift Pay Calculator</h1>
+    <div class="stamp" id="periodStamp">—</div>
+  </div>
+
+  <div class="panel">
+    <h2>Assumptions / Основни податоци</h2>
+    <div class="grid">
+      <div>
+        <label>Year / Година</label>
+        <input type="number" id="year" value="2026" min="2000" max="2100">
+      </div>
+      <div>
+        <label>Month / Месец (1–12)</label>
+        <input type="number" id="month" value="8" min="1" max="12">
+      </div>
+      <div>
+        <label>Base monthly salary (MKD)</label>
+        <input type="number" id="baseSalary" value="26046">
+      </div>
+      <div>
+        <label>Monthly norm hours</label>
+        <input type="number" id="normHours" value="184">
+      </div>
+    </div>
+    <br>
+    <details>
+      <summary>Advanced: differentials & night-shift split (default = Macedonian labor law minimums)</summary>
+      <div class="grid">
+        <div><label>Night differential (+)</label><input type="number" step="0.01" id="nightDiff" value="0.35"></div>
+        <div><label>Sunday differential (+)</label><input type="number" step="0.01" id="sundayDiff" value="0.50"></div>
+        <div><label>Holiday differential (+)</label><input type="number" step="0.01" id="holidayDiff" value="1.50"></div>
+        <div><label>Night shift length (hrs)</label><input type="number" id="nightHours" value="8"></div>
+        <div><label>3-shift allowance rate (of base)</label><input type="number" step="0.01" id="allowRate" value="0.05"></div>
+        <div><label>Food allowance (full month, MKD)</label><input type="number" id="foodAllow" value="2555"></div>
+        <div><label>Incentive (full month, MKD)</label><input type="number" id="incentive" value="153"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <h2>Monthly Schedule / Распоред <span style="color:var(--text-dim); text-transform:none; letter-spacing:0;">— click a cell to edit</span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Day</th><th>Date</th><th>Weekday</th><th>Shift</th><th>Holiday?</th><th>Hours</th><th>Pay (MKD)</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Paycheck Summary / Резиме</h2>
+    <div class="summary-grid">
+      <div class="lbl">Hourly net rate (base ÷ norm hours)</div><div class="val" id="hourlyRate">—</div>
+      <div class="lbl">Total hours worked</div><div class="val" id="totalHours">—</div>
+      <div class="lbl">Total shift pay</div><div class="val" id="totalShiftPay">—</div>
+      <div class="divider"></div>
+      <div class="lbl">Pro-ration ratio (hours ÷ norm)</div><div class="val" id="ratio">—</div>
+      <div class="lbl">3-shift work allowance (pro-rated)</div><div class="val" id="allowOut">—</div>
+      <div class="lbl">Food allowance (pro-rated)</div><div class="val" id="foodOut">—</div>
+      <div class="lbl">Incentive (pro-rated)</div><div class="val" id="incentiveOut">—</div>
+    </div>
+    <div class="grand">
+      <span>Estimated net paycheck</span>
+      <span id="grandTotal">—</span>
+    </div>
+    <div class="note">
+      <span class="legend-dot" style="background:var(--amber)"></span>Sunday auto-detected from the calendar &nbsp;&nbsp;
+      <span class="legend-dot" style="background:var(--red)"></span>Holiday — mark manually per day<br>
+      Night ("3") days: the full 8 hours (default, editable above) get the flat night differential, plus Sunday/Holiday premiums if that day qualifies — verified against a real payslip (implied multipliers of exactly 1.35 and 1.85, confirming no partial base-rate hours within the shift). Allowances are pro-rated by hours worked ÷ monthly norm hours.
+    </div>
+  </div>
+
+  <footer>Everything runs locally in this file — nothing is uploaded or saved anywhere. Edit the HTML inputs any time; re-open the file to reset to defaults.</footer>
+</div>
+
+<script>
+const WEEKDAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// Default shift pattern (editable per day) - seeded with the schedule discussed
+const DEFAULT_SHIFTS = ["3","2","2","2","C","C","3","3","C","2","2","2","C","C","C",
+                         "3","3","C","2","2","1","3","C","C","3","2","C","2","2","1","1"];
+const DEFAULT_HOLIDAYS = {2:true, 28:true};
+
+function el(id){ return document.getElementById(id); }
+function fmt(n){ return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
+
+function buildSchedule(){
+  const y = parseInt(el('year').value);
+  const m = parseInt(el('month').value);
+  const nDays = daysInMonth(y,m);
+  const tbody = el('scheduleBody');
+  tbody.innerHTML = "";
+
+  el('periodStamp').textContent = `${String(m).padStart(2,'0')}-${y}`;
+
+  for(let d=1; d<=nDays; d++){
+    const dateObj = new Date(y, m-1, d);
+    const isSunday = dateObj.getDay() === 0;
+    const wd = WEEKDAYS[dateObj.getDay()];
+
+    const tr = document.createElement('tr');
+    tr.dataset.day = d;
+    tr.dataset.sunday = isSunday ? "1":"0";
+
+    const tdDay = document.createElement('td'); tdDay.textContent = d;
+    const tdDate = document.createElement('td');
+    tdDate.textContent = `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}`;
+    const tdWd = document.createElement('td');
+    tdWd.innerHTML = wd + (isSunday ? ' <span class="badge sun">SUN</span>' : '');
+
+    const tdShift = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.className = 'shift';
+    ["1","2","3","C"].forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      if((DEFAULT_SHIFTS[d-1]||"C") === v) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', recalc);
+    tdShift.appendChild(sel);
+
+    const tdHol = document.createElement('td');
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.className = 'holiday-box';
+    chk.checked = !!DEFAULT_HOLIDAYS[d];
+    chk.addEventListener('change', recalc);
+    tdHol.appendChild(chk);
+
+    const tdHours = document.createElement('td'); tdHours.className='hours-cell';
+    const tdPay = document.createElement('td'); tdPay.className='paycell pay-cell';
+
+    tr.appendChild(tdDay); tr.appendChild(tdDate); tr.appendChild(tdWd);
+    tr.appendChild(tdShift); tr.appendChild(tdHol); tr.appendChild(tdHours); tr.appendChild(tdPay);
+    tbody.appendChild(tr);
+  }
+  recalc();
+}
+
+function recalc(){
+  const baseSalary = parseFloat(el('baseSalary').value) || 0;
+  const normHours = parseFloat(el('normHours').value) || 1;
+  const nightDiff = parseFloat(el('nightDiff').value) || 0;
+  const sundayDiff = parseFloat(el('sundayDiff').value) || 0;
+  const holidayDiff = parseFloat(el('holidayDiff').value) || 0;
+  const nightHours = parseFloat(el('nightHours').value) || 8;
+  const allowRate = parseFloat(el('allowRate').value) || 0;
+  const foodAllow = parseFloat(el('foodAllow').value) || 0;
+  const incentive = parseFloat(el('incentive').value) || 0;
+
+  const hourly = baseSalary / normHours;
+  el('hourlyRate').textContent = fmt(hourly) + " MKD/hr";
+
+  let totalHours = 0, totalPay = 0;
+  const rows = Array.from(document.querySelectorAll('#scheduleBody tr'));
+
+  rows.forEach((tr)=>{
+    const shift = tr.querySelector('select.shift').value;
+    const isHoliday = tr.querySelector('input.holiday-box').checked;
+    const isSunday = tr.dataset.sunday === "1";
+    const dayPrem = (isHoliday ? holidayDiff : 0) + (isSunday ? sundayDiff : 0);
+
+    let hours = 0, pay = 0;
+    if(shift === "C"){
+      hours = 0; pay = 0;
+    } else if(shift === "3"){
+      // Whole night shift attributed to the calendar day it's scheduled under
+      // (tested against a real payslip: splitting hours across midnight made the match worse, not better).
+      // Confirmed against a real payslip: the ENTIRE night shift gets the flat night
+      // (+ Sunday/Holiday) multiplier — no partial base-rate hours within the shift.
+      hours = nightHours;
+      pay = nightHours * hourly * (1 + nightDiff + dayPrem);
+    } else {
+      hours = 8;
+      pay = 8 * hourly * (1 + dayPrem);
+    }
+
+    tr.querySelector('.hours-cell').textContent = hours;
+    tr.querySelector('.pay-cell').textContent = fmt(pay);
+
+    tr.classList.toggle('sunday', isSunday && shift !== "C");
+    tr.classList.toggle('holiday', isHoliday && shift !== "C");
+    tr.classList.toggle('free', shift === "C");
+
+    totalHours += hours;
+    totalPay += pay;
+  });
+
+  const ratio = totalHours / normHours;
+  const allowOut = ratio * (allowRate * baseSalary);
+  const foodOut = ratio * foodAllow;
+  const incentiveOut = ratio * incentive;
+  const grand = totalPay + allowOut + foodOut + incentiveOut;
+
+  el('totalHours').textContent = totalHours + " hrs";
+  el('totalShiftPay').textContent = fmt(totalPay) + " MKD";
+  el('ratio').textContent = (ratio*100).toFixed(1) + "%";
+  el('allowOut').textContent = fmt(allowOut) + " MKD";
+  el('foodOut').textContent = fmt(foodOut) + " MKD";
+  el('incentiveOut').textContent = fmt(incentiveOut) + " MKD";
+  el('grandTotal').textContent = fmt(grand) + " MKD";
+}
+
+['year','month','baseSalary','normHours','nightDiff','sundayDiff','holidayDiff',
+ 'nightHours','allowRate','foodAllow','incentive'].forEach(id=>{
+  el(id).addEventListener('change', ()=>{
+    if(['year','month'].includes(id)) buildSchedule(); else recalc();
+  });
+});
+
+buildSchedule();
+</script>
+</body>
+</html>
