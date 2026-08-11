@@ -194,9 +194,9 @@
 <script>
 const WEEKDAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 // Default shift pattern (editable per day) - seeded with the schedule discussed
-const DEFAULT_SHIFTS = ["3","2","2","2","C","C","3","3","C","2","2","2","C","C","C",
-                         "3","3","C","2","2","1","3","C","C","3","2","C","2","2","1","1"];
-const DEFAULT_HOLIDAYS = {2:true, 28:true};
+const DEFAULT_SHIFTS = ["C","C","C","C","C","C","C","C","C","C","C","C","C","C","C",
+                         "C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C"];
+const DEFAULT_HOLIDAYS = {};
 
 function el(id){ return document.getElementById(id); }
 function fmt(n){ return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
